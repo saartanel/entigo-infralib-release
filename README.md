@@ -1,3 +1,3 @@
-# entigo-infralib
+# entigo-infralib-release
 
 TODO
