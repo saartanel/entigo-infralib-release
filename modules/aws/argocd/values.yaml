@@ -1,0 +1,22 @@
+argocd:
+  server:
+    config:
+      url: https://${hostname}
+    ingress:
+      annotations: 
+        alb.ingress.kubernetes.io/group.name: ${ingress_group_name}
+        alb.ingress.kubernetes.io/scheme: ${ingress_scheme}
+      hosts:
+      - ${hostname}
+  crds:
+    install: ${install_crd}
+  configs:
+    repositories:
+      entigo-codecommit:
+        insecure: "true"
+        name: "entigo-codecommit"
+        project: "default"
+        type: "git"
+        url: "${repo}"
+        sshPrivateKey: |
+          ${sshPrivateKey}
