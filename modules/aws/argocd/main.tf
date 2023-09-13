@@ -51,6 +51,8 @@ resource "helm_release" "argocd" {
     templatefile("${path.module}/values.yaml", {
       hostname = var.hostname
       install_crd = var.install_crd
+      workspace = terraform.workspace
+      namespace = var.namespace == "" ? "${local.hname}-argocd-aws" : var.namespace
       ingress_group_name = var.ingress_group_name
       ingress_scheme = var.ingress_scheme
       sshPrivateKey = indent(10, tls_private_key.argocd.private_key_pem)
