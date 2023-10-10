@@ -65,6 +65,9 @@ steps:
     vpc_security_group_ids: |
       [{{ .ssm.network.vpc.pipeline_security_group }}]
     approve: major
+    provider:
+      inputs:
+        eks_cluster_name: "{{ .ssm.infra.eks.cluster_name }}"
     modules:
       - name: crossplane
         source: aws/crossplane
@@ -81,7 +84,7 @@ steps:
           branch: "main"
           namespace: "argocd"
           name: "argocd"
-          argocd_apps_name: "ep-applications"
+          argocd_apps_name: "{{ .config.prefix }}-applications"
   - name: applications
     type: argocd-apps
     workspace: test
