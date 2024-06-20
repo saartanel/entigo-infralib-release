@@ -3,6 +3,8 @@ argocd:
     domain: ${hostname}
 
   configs:
+    params:
+      server.insecure: true
     cm:
       accounts.infralib: apiKey
     rbac:
@@ -15,7 +17,7 @@ argocd:
   server:
     service:
       annotations:
-        cloud.google.com/backend-config: '{"ports": {"http":"${namespace}"}}'
+        cloud.google.com/backend-config: '{"ports": {"http":"${namespace}-server"}}'
 
     ingress:
       annotations: 
