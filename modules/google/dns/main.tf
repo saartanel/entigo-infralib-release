@@ -18,7 +18,6 @@ resource "google_dns_managed_zone" "pub" {
   count         = var.create_public ? 1 : 0
   name          = trimsuffix(replace(local.pub_domain, ".", "-"), "-")
   dns_name      = local.pub_domain
-  description   = local.pub_domain
   labels        = {}
   visibility    = "public"
   force_destroy = true
@@ -32,7 +31,6 @@ resource "google_dns_managed_zone" "int" {
   count         = var.create_private ? 1 : 0
   name          = trimsuffix(replace(local.int_domain, ".", "-"), "-")
   dns_name      = local.int_domain
-  description   = local.int_domain
   labels        = {}
   visibility    = "private"
   force_destroy = true
@@ -48,7 +46,6 @@ resource "google_dns_managed_zone" "int_cert" {
   count         = var.create_private ? 1 : 0
   name          = "${local.int_zone}-cert"
   dns_name      = local.int_domain
-  description   = local.int_domain
   labels        = {}
   visibility    = "public"
   force_destroy = true
@@ -98,21 +95,18 @@ resource "google_dns_record_set" "int_cert" {
 resource "google_certificate_manager_dns_authorization" "pub_cert" {
   count       = var.create_public ? 1 : 0
   name        = local.pub_zone
-  description = "DNS Authorization for ${local.pub_domain}"
   domain      = trimsuffix(local.pub_domain, ".")
 }
 
 resource "google_certificate_manager_dns_authorization" "int_cert" {
   count       = var.create_private ? 1 : 0
   name        = local.int_zone
-  description = "DNS Authorization for ${local.int_domain}"
   domain      = trimsuffix(local.int_domain, ".")
 }
 
 resource "google_certificate_manager_certificate" "pub_cert" {
   count       = var.create_public ? 1 : 0
   name        = local.pub_zone
-  description = "Certificate for ${local.pub_domain}"
   managed {
     domains            = [trimsuffix(local.pub_domain, "."), "*.${trimsuffix(local.pub_domain, ".")}"]
     dns_authorizations = [google_certificate_manager_dns_authorization.pub_cert[0].id]
@@ -122,11 +116,52 @@ resource "google_certificate_manager_certificate" "pub_cert" {
 resource "google_certificate_manager_certificate" "int_cert" {
   count       = var.create_private ? 1 : 0
   name        = local.int_zone
-  description = "Certificate for ${local.int_domain}"
   managed {
     domains            = [trimsuffix(local.int_domain, "."), "*.${trimsuffix(local.int_domain, ".")}"]
     dns_authorizations = [google_certificate_manager_dns_authorization.int_cert[0].id]
   }
+}
+
+resource "google_certificate_manager_certificate_map" "pub_cert" {
+  count       = var.create_public ? 1 : 0
+  name        = local.pub_zone
+}
+
+resource "google_certificate_manager_certificate_map" "int_cert" {
+  count       = var.create_private ? 1 : 0
+  name        = local.int_zone
+}
+
+resource "google_certificate_manager_certificate_map_entry" "pub_cert_1" {
+  count        = var.create_public ? 1 : 0
+  name         = "${local.pub_zone}-1"
+  map          = google_certificate_manager_certificate_map.pub_cert[0].name
+  certificates = [google_certificate_manager_certificate.pub_cert[0].id]
+  hostname     = trimsuffix(local.pub_domain, ".")
+}
+
+resource "google_certificate_manager_certificate_map_entry" "pub_cert_2" {
+  count        = var.create_public ? 1 : 0
+  name         = "${local.pub_zone}-2"
+  map          = google_certificate_manager_certificate_map.pub_cert[0].name
+  certificates = [google_certificate_manager_certificate.pub_cert[0].id]
+  hostname     = "*.${trimsuffix(local.pub_domain, ".")}"
+}
+
+resource "google_certificate_manager_certificate_map_entry" "int_cert_1" {
+  count        = var.create_private ? 1 : 0
+  name         = "${local.int_zone}-1"
+  map          = google_certificate_manager_certificate_map.int_cert[0].name
+  certificates = [google_certificate_manager_certificate.int_cert[0].id]
+  hostname     = trimsuffix(local.int_domain, ".")
+}
+
+resource "google_certificate_manager_certificate_map_entry" "int_cert_2" {
+  count        = var.create_private ? 1 : 0
+  name         = "${local.int_zone}-2"
+  map          = google_certificate_manager_certificate_map.int_cert[0].name
+  certificates = [google_certificate_manager_certificate.int_cert[0].id]
+  hostname     = "*.${trimsuffix(local.int_domain, ".")}"
 }
 
 module "pub_zone_id" {
