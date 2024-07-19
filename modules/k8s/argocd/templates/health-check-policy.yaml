@@ -16,7 +16,7 @@ spec:
     config:
       type: HTTP
       httpHealthCheck:
-        requestPath: /-/healthy
+        requestPath: /healthz
   targetRef:
     group: ""
     kind: Service
