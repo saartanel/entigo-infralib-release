@@ -1,0 +1,8 @@
+google:
+  externalCertificateMap: ""
+  internalCertificateMap: ""
+  externalGatewayClassName: gke-l7-global-external-managed
+  internalGatewayClassName: gke-l7-global-external-managed
+
+createExternal: true
+createInternal: true
