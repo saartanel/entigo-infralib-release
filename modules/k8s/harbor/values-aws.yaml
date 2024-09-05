@@ -20,10 +20,12 @@ harbor:
         alb.ingress.kubernetes.io/target-type: ip
         kubernetes.io/ingress.class: alb
       controller: alb
-  persistence:
-    imageChartStorage:
-      type: s3
-      s3:
-        region: ""
-        regionendpoint: ""
-        bucket: ""
+  updateStrategy:
+    type: Recreate
+#  persistence:
+#    imageChartStorage:
+#      type: s3
+#      s3:
+#        region: ""
+#        regionendpoint: ""
+#        bucket: ""
