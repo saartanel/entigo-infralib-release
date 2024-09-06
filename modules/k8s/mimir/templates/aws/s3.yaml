@@ -1,4 +1,4 @@
-{{- if eq .Values.cloudProvider "aws" }}
+{{- if eq .Values.global.cloudProvider "aws" }}
 
 apiVersion: s3.aws.crossplane.io/v1beta1
 kind: Bucket
@@ -9,7 +9,7 @@ metadata:
 spec:
   forProvider:
     acl: private
-    locationConstraint: {{ .Values.global.region }}
+    locationConstraint: {{ .Values.global.aws.region }}
     objectOwnership: BucketOwnerPreferred
     publicAccessBlockConfiguration:
       blockPublicPolicy: true

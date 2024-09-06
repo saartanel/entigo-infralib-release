@@ -18,11 +18,11 @@ spec:
               "secretsmanager:ListSecretVersionIds"
             ],
             "Resource": [
-              "arn:aws:secretsmanager:eu-north-1:{{ .Values.awsAccount }}:secret:*"
+              "arn:aws:secretsmanager:eu-north-1:{{ .Values.global.aws.account }}:secret:*"
             ]
           }
         ]
       }
 
   providerConfigRef:
-    name: {{ .Values.providerConfigRefName }}
+    name: {{ .Values.global.providerConfigRefName }}

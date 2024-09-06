@@ -1,1 +1,3 @@
-cloudProvider: aws
+global:
+  cloudProvider: aws
+  providerConfigRefName: crossplane-aws

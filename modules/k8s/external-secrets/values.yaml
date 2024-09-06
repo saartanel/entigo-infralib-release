@@ -1,3 +1,16 @@
+global:
+  providerConfigRefName: crossplane-aws
+
+  gitlab:
+    url: ""
+    project: ""
+    secret: ""
+
+  aws:
+    account: ""
+    region: ""
+    clusterOIDC: ""
+
 external-secrets:
   installCRDs: true
   deploymentAnnotations: 
@@ -81,13 +94,3 @@ external-secrets:
         operator: "Equal"
         value: "true"
         effect: "NoSchedule"
-
-awsAccount: ""
-awsRegion: ""
-clusterOIDC: ""
-providerConfigRefName: crossplane-aws
-
-
-gitlab_url: ""
-gitlab_project: ""
-gitlab_secet: ""

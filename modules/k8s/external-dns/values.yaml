@@ -1,8 +1,13 @@
-cloudProvider: aws
+global:
+  cloudProvider: aws
+  providerConfigRefName: crossplane-aws
 
-awsAccount: ""
-clusterOIDC: ""
-providerConfigRefName: crossplane-aws
+  aws:
+    account: ""
+    clusterOIDC: ""
+
+  google:
+    projectID: ""
 
 external-dns:
   serviceAccount:
