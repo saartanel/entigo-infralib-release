@@ -1,0 +1,9 @@
+global:
+  cloudProvider: google
+  providerConfigRefName: crossplane-google
+
+  google:
+    projectID: ""
+    region: ""
+    cluster:
+      name: ""
