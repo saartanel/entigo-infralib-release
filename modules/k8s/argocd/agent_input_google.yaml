@@ -1,0 +1,10 @@
+global:
+  google:
+    gateway:
+      name: google-gateway-internal
+      namespace: google-gateway
+argocd:
+  global:
+    domain: |
+      argocd.{{ .toutput.dns.int_domain }}
+

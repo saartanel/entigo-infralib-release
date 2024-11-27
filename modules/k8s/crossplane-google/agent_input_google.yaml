@@ -1,0 +1,5 @@
+global:
+  google:
+    projectID: "{{ .toutput.crossplane.project_id }}"
+  deploymentRuntimeConfig:
+    googleServiceAccount: "{{ .toutput.crossplane.service_account_email }}"
