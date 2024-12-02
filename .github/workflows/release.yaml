@@ -20,6 +20,7 @@ jobs:
         RELEASE_URL=$(gh release create ${GITHUB_REF##refs/tags/} \
         --title "Release ${GITHUB_REF##refs/tags/}" \
         --generate-notes \
+        --notes-from-tag \
         --draft=false \
         --latest=true \
         --prerelease=false)
