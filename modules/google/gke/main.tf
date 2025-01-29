@@ -1,5 +1,22 @@
+resource "random_integer" "subnet_third_octet" {
+  min = 16
+  max = 31
+}
+
+resource "random_integer" "subnet_fourth_octet_raw" {
+  min = 0
+  max = 15  # We'll multiply this by 16 later to get alignment
+}
 
 locals {
+  aligned_fourth_octet = random_integer.subnet_fourth_octet_raw.result * 16
+  subnet_cidr = format("172.%d.%d.%d/28", 
+    random_integer.subnet_third_octet.result,
+    local.aligned_fourth_octet,
+    0
+  )
+
+
   google_compute_zones = join(",", data.google_compute_zones.this.names)
 
   gke_main_node_locations    = var.gke_main_node_locations != "" ? var.gke_main_node_locations : local.google_compute_zones
@@ -122,31 +139,32 @@ module "gke" {
   region                 = data.google_client_config.this.region
   network                = var.network
   subnetwork             = var.subnetwork
-  master_ipv4_cidr_block = var.master_ipv4_cidr_block
+  master_ipv4_cidr_block = var.master_ipv4_cidr_block == "" ? local.subnet_cidr : var.master_ipv4_cidr_block
   ip_range_pods          = var.ip_range_pods
   ip_range_services      = var.ip_range_services
 
   # istio                              = false //only in beta module
-  service_account_name                 = var.prefix
-  grant_registry_access                = var.grant_registry_access
-  registry_project_ids                 = var.registry_project_ids
-  master_global_access_enabled         = var.master_global_access_enabled
-  enable_l4_ilb_subsetting             = var.enable_l4_ilb_subsetting
-  issue_client_certificate             = false
-  deploy_using_private_endpoint        = var.deploy_using_private_endpoint
-  enable_private_endpoint              = var.enable_private_endpoint
-  enable_private_nodes                 = true
-  remove_default_node_pool             = true
-  enable_shielded_nodes                = false
-  identity_namespace                   = "enabled"
-  node_metadata                        = "GKE_METADATA"
-  horizontal_pod_autoscaling           = true
-  enable_vertical_pod_autoscaling      = false
-  deletion_protection                  = false
-  gateway_api_channel                  = "CHANNEL_STANDARD"
-  monitoring_enable_managed_prometheus = var.monitoring_enable_managed_prometheus
-  monitoring_enabled_components        = var.monitoring_enabled_components
-  logging_enabled_components           = var.logging_enabled_components
+  service_account_name                   = var.prefix
+  grant_registry_access                  = var.grant_registry_access
+  registry_project_ids                   = var.registry_project_ids
+  master_global_access_enabled           = var.master_global_access_enabled
+  enable_l4_ilb_subsetting               = var.enable_l4_ilb_subsetting
+  issue_client_certificate               = false
+  deploy_using_private_endpoint          = var.deploy_using_private_endpoint
+  enable_private_endpoint                = var.enable_private_endpoint
+  enable_private_nodes                   = true
+  remove_default_node_pool               = true
+  enable_shielded_nodes                  = false
+  identity_namespace                     = "enabled"
+  node_metadata                          = "GKE_METADATA"
+  horizontal_pod_autoscaling             = true
+  enable_vertical_pod_autoscaling        = false
+  deletion_protection                    = false
+  gateway_api_channel                    = "CHANNEL_STANDARD"
+  monitoring_enable_managed_prometheus   = var.monitoring_enable_managed_prometheus
+  monitoring_enabled_components          = var.monitoring_enabled_components
+  logging_enabled_components             = var.logging_enabled_components
+  insecure_kubelet_readonly_port_enabled = false
 
   node_pools = local.gke_managed_node_groups
   node_pools_labels = {
