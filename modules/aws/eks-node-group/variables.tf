@@ -7,6 +7,17 @@ variable "launch_template_id" {
   default  = ""
 }
 
+#variable "ssh_key_name" {
+#  type     = string
+#  default  = ""
+#}
+
+variable "key_name" {
+  type     = string
+  nullable = false
+  default  = ""
+}
+
 variable "cluster_name" {
   type     = string
   nullable = false
