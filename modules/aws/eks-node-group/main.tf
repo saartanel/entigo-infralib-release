@@ -12,9 +12,10 @@ module "eks-managed-node-group" {
   subnet_ids              = var.subnets
   cluster_primary_security_group_id = var.cluster_primary_security_group_id
   cluster_service_cidr    = var.cluster_service_cidr
-  vpc_security_group_ids            = [var.node_security_group_id]
+  vpc_security_group_ids = var.security_group_ids
   
   pre_bootstrap_user_data = var.pre_bootstrap_user_data
+  use_custom_launch_template = length(var.remote_access) != 0 ? false : true
   remote_access = var.remote_access
   
   min_size     = var.min_size
