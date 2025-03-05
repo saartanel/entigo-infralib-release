@@ -1,13 +1,11 @@
 global:
   google:
-    hostname: "{{ .module.name }}.{{ .toutput.dns.int_domain }}"
+    hostname: "{{ .module.name }}.{{ .toutput.dns.pub_domain }}"
     projectID: "{{ .toutput.crossplane.project_id }}"
-    gateway:
-      name: google-gateway-internal
-      namespace: google-gateway
     bucket:
-      location: europe-north1
+      location: "{{ .toutput.gke.region }}"
 harbor:
+  externalURL: "https://{{ .module.name }}.{{ .toutput.dns.pub_domain }}"
   persistence:
     imageChartStorage:
       gcs:

@@ -6,6 +6,8 @@ locals {
   #  provider_key_arn = var.cluster_encryption_kms_key_arn
   #}] : []
   cluster_encryption_config = {}
+  
+  iam_role_additional_policies = zipmap(compact(var.iam_role_additional_policies), compact(var.iam_role_additional_policies))
 
   eks_managed_node_groups_all = {
     main = {
@@ -18,7 +20,10 @@ locals {
       key_name         = var.node_ssh_key_pair_name
       release_version = var.eks_cluster_version
       ami_type        = var.eks_main_ami_type
-
+      iam_role_additional_policies = local.iam_role_additional_policies
+      labels = {
+        main = "true"
+      }
       launch_template_tags = {
         Terraform = "true"
         Prefix    = var.prefix
@@ -47,6 +52,7 @@ locals {
       key_name         = var.node_ssh_key_pair_name
       release_version = var.eks_cluster_version
       ami_type        = var.eks_mon_ami_type
+      iam_role_additional_policies = local.iam_role_additional_policies
       taints = [
         {
           key    = "mon"
@@ -86,6 +92,7 @@ locals {
       key_name         = var.node_ssh_key_pair_name
       release_version = var.eks_cluster_version
       ami_type        = var.eks_tools_ami_type
+      iam_role_additional_policies = local.iam_role_additional_policies
       taints = [
         {
           key    = "tools"
@@ -191,7 +198,7 @@ resource "aws_ec2_tag" "publicsubnets" {
 
 module "ebs_csi_irsa_role" {
   source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version               = "5.48.0"
+  version               = "5.52.2"
   role_name             = "${var.prefix}-ebs-csi"
   attach_ebs_csi_policy = true
   ebs_csi_kms_cmk_ids = var.node_encryption_kms_key_arn != "" ? [var.node_encryption_kms_key_arn] : []
@@ -209,7 +216,7 @@ module "ebs_csi_irsa_role" {
 
 module "vpc_cni_irsa_role" {
   source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version               = "5.48.0"
+  version               = "5.52.2"
   role_name_prefix      = "VPC-CNI-IRSA"
   attach_vpc_cni_policy = true
   vpc_cni_enable_ipv4   = true
@@ -230,7 +237,7 @@ module "vpc_cni_irsa_role" {
 #https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.31.6"
+  version = "20.33.1"
 
   cluster_name                    = var.prefix
   cluster_version                 = var.eks_cluster_version
@@ -238,6 +245,8 @@ module "eks" {
   cluster_endpoint_public_access  = var.eks_cluster_public
   cluster_enabled_log_types       = var.cluster_enabled_log_types
   cloudwatch_log_group_kms_key_id = var.cloudwatch_log_group_kms_key_id != "" ? var.cloudwatch_log_group_kms_key_id : null
+  
+  cluster_identity_providers = var.cluster_identity_providers
   
   create_kms_key = false
   cluster_encryption_config = local.cluster_encryption_config

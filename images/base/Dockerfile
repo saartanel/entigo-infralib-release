@@ -2,7 +2,7 @@ FROM debian:bookworm-slim
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 WORKDIR /app
-ENV KUBECTL_VERSION=v1.29.8 TERRAFORM_VERSION=1.7.5-1 HELM_VERSION=v3.15.4 AWSCLI_VERSION=latest ARGOCD_CLI=v2.11.3 CLOUD_SDK_VERSION=499.0.0
+ENV KUBECTL_VERSION=v1.30.10 TERRAFORM_VERSION=1.7.5-1 HELM_VERSION=v3.17.1 AWSCLI_VERSION=latest ARGOCD_CLI=v2.14.2 CLOUD_SDK_VERSION=511.0.0
 ENTRYPOINT ["/usr/bin/entrypoint.sh"]  
 
 ENV PATH=/google-cloud-sdk/bin:$PATH CLOUDSDK_PYTHON=/usr/bin/python3
@@ -55,7 +55,7 @@ RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" | tee -a
       gcloud --version; \
     fi
 
-COPY --from=entigolabs/entigo-infralib-agent /usr/bin/ei-agent /usr/bin/ei-agent
+COPY --from=entigolabs/entigo-infralib-agent:latest  /usr/bin/ei-agent /usr/bin/ei-agent
 
 #SEE https://entigo.atlassian.net/browse/RD-76
 COPY *.sh /usr/bin/

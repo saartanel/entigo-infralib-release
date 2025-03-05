@@ -5,6 +5,7 @@ global:
   aws:
     account: ""
     clusterOIDC: ""
+    kmsKeyId: ""
 
 harbor:
   expose:
@@ -23,10 +24,13 @@ harbor:
       controller: alb
   updateStrategy:
     type: Recreate
-#  persistence:
-#    imageChartStorage:
-#      type: s3
-#      s3:
-#        region: ""
-#        regionendpoint: ""
-#        bucket: ""
+  #persistence:
+  #  imageChartStorage:
+  #    type: s3
+  #    s3:
+  #      region: ""
+  #      #regionendpoint: ""
+  #      bucket: ""
+  #registry:
+  #  serviceAccountName: "harbor"
+  #  automountServiceAccountToken: true

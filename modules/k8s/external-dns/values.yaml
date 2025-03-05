@@ -1,33 +1,13 @@
 global:
-  cloudProvider: aws
-  providerConfigRefName: crossplane-aws
-
-  aws:
-    account: ""
-    clusterOIDC: ""
-
-  google:
-    projectID: ""
-
+  cloudProvider: ""
+  providerConfigRefName: ""
 external-dns:
-  serviceAccount:
-    create: false
-    name: "external-dns"
-
-  env:
-    - name: AWS_DEFAULT_REGION
-      value: ""
-
   registry: txt
   policy: upsert-only
-  sources:
-    - service
-    - ingress
-    - istio-gateway
-    - istio-virtualservice
   extraArgs:
     - --metrics-address=:7979
-
+  serviceAccount:
+    name: "external-dns"
   serviceMonitor:
     enabled: false
     scrapeTimeout: 20s
