@@ -1,7 +1,7 @@
 argocd:
   global:
     domain: |
-      {{ .module.name }}.{{ .toutput.route53.int_domain }}
+      {{ .module.name }}.{{ .output.net.dns.int_domain }}
     image:
       repository: '{{ .toptout.ecr-proxy.quay_registry | "quay.io" }}/argoproj/argocd'
   dex:
