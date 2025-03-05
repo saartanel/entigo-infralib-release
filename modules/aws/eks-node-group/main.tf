@@ -17,7 +17,9 @@ module "eks-managed-node-group" {
 
   key_name = var.key_name
   pre_bootstrap_user_data = var.pre_bootstrap_user_data
-
+  use_custom_launch_template = length(var.remote_access) != 0 ? false : true
+  remote_access = var.remote_access
+  
   min_size     = var.min_size
   max_size     = var.max_size
   desired_size = var.desired_size
