@@ -31,12 +31,6 @@ variable "cluster_service_cidr" {
 
 variable "security_group_ids" {
   type = list(string)
-  default = []
-}
-
-variable "iam_role_additional_policies" {
-  type = list(string)
-  default = []
 }
 
 variable "min_size" {
