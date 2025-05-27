@@ -23,9 +23,15 @@ locals {
       labels = {
         main = "true"
       }
+      autoscaling_group_tags = {
+        Terraform = "true"
+        Prefix    = var.prefix
+        created-by = "entigo-infralib"
+      }
       launch_template_tags = {
         Terraform = "true"
         Prefix    = var.prefix
+        created-by = "entigo-infralib"
       }
       block_device_mappings = {
         xvda = {
@@ -61,9 +67,15 @@ locals {
       labels = {
         mon = "true"
       }
+      autoscaling_group_tags = {
+        Terraform = "true"
+        Prefix    = var.prefix
+        created-by = "entigo-infralib"
+      }
       launch_template_tags = {
         Terraform = "true"
         Prefix    = var.prefix
+        created-by = "entigo-infralib"
       }
 
       block_device_mappings = {
@@ -100,9 +112,15 @@ locals {
       labels = {
         tools = "true"
       }
+      autoscaling_group_tags = {
+        Terraform = "true"
+        Prefix    = var.prefix
+        created-by = "entigo-infralib"
+      }
       launch_template_tags = {
         Terraform = "true"
         Prefix    = var.prefix
+        created-by = "entigo-infralib"
       }
 
       block_device_mappings = {
@@ -208,6 +226,7 @@ module "ebs_csi_irsa_role" {
   tags = {
     Terraform = "true"
     Prefix    = var.prefix
+    created-by = "entigo-infralib"
   }
 }
 
@@ -228,6 +247,7 @@ module "vpc_cni_irsa_role" {
   tags = {
     Terraform = "true"
     Prefix    = var.prefix
+    created-by = "entigo-infralib"
   }
 }
 
@@ -489,6 +509,7 @@ module "eks" {
   tags = {
     Terraform = "true"
     Prefix    = var.prefix
+    created-by = "entigo-infralib"
   }
 }
 
