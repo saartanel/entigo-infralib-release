@@ -219,12 +219,11 @@ module "efs_csi_irsa_role" {
   source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version               = "5.58.0"
   role_name             = "${var.prefix}-efs-csi"
-  attach_ebs_csi_policy = true
-  ebs_csi_kms_cmk_ids = var.node_encryption_kms_key_arn != "" ? [var.node_encryption_kms_key_arn] : []
+  attach_efs_csi_policy = true
   oidc_providers = {
     ex = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+      namespace_service_accounts = ["kube-system:efs-csi-controller-sa"]
     }
   }
   tags = {
