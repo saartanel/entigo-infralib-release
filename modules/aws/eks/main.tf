@@ -215,6 +215,25 @@ module "ebs_csi_irsa_role" {
   }
 }
 
+module "efs_csi_irsa_role" {
+  source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version               = "5.58.0"
+  role_name             = "${var.prefix}-efs-csi"
+  attach_ebs_csi_policy = true
+  ebs_csi_kms_cmk_ids = var.node_encryption_kms_key_arn != "" ? [var.node_encryption_kms_key_arn] : []
+  oidc_providers = {
+    ex = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+    }
+  }
+  tags = {
+    Terraform = "true"
+    Prefix    = var.prefix
+    created-by = "entigo-infralib"
+  }
+}
+
 module "vpc_cni_irsa_role" {
   source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version               = "5.58.0"
@@ -301,6 +320,13 @@ module "eks" {
       resolve_conflicts_on_create = "OVERWRITE"
       addon_version               = var.kube_proxy_addon_version
     }
+
+    aws-efs-csi-driver = {
+      resolve_conflicts_on_update = "OVERWRITE"
+      resolve_conflicts_on_create = "OVERWRITE"
+      addon_version               = var.efs_csi_addon_version
+    }
+
     vpc-cni = {
       resolve_conflicts_on_update = "OVERWRITE"
       resolve_conflicts_on_create = "OVERWRITE"
