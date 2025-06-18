@@ -58,15 +58,24 @@ then
 elif [ "$COMMAND" == "plan" -o "$COMMAND" == "plan-destroy" -o "$COMMAND" == "argocd-plan"  -o "$COMMAND" == "argocd-plan-destroy" ]
 then
   echo "Need to copy project files from bucket $INFRALIB_BUCKET"
+  if [ "$TERRAFORM_CACHE" != "true" ]
+  then
+    echo "Excluding .terraform cache."
+    AWS_S3_EXCLUDE_TERRAFORM=(--exclude "*.terraform/*")
+    GOOGLE_S3_EXCLUDE_TERRAFORM=(-x "\.terraform/.*")
+  else
+    AWS_S3_EXCLUDE_TERRAFORM=()
+    GOOGLE_S3_EXCLUDE_TERRAFORM=()
+  fi
   mkdir -p /tmp/plans/$TF_VAR_prefix/
-  mkdir -p /tmp/project/steps/
+  mkdir -p /tmp/project/steps/$TF_VAR_prefix
   if [ ! -z "$GOOGLE_REGION" ]
   then
-    gsutil -m -q cp -r gs://${INFRALIB_BUCKET}/steps/$TF_VAR_prefix /tmp/project/steps/
+    gsutil -m -q rsync -r ${GOOGLE_S3_EXCLUDE_TERRAFORM[@]} gs://${INFRALIB_BUCKET}/steps/$TF_VAR_prefix /tmp/project/steps/$TF_VAR_prefix
     cd /tmp/project
   else
     cd /tmp/project
-    aws s3 cp s3://${INFRALIB_BUCKET}/steps/$TF_VAR_prefix ./steps/$TF_VAR_prefix --recursive --no-progress --quiet
+    aws s3 cp s3://${INFRALIB_BUCKET}/steps/$TF_VAR_prefix ./steps/$TF_VAR_prefix --recursive --no-progress --quiet ${AWS_S3_EXCLUDE_TERRAFORM[@]}
   fi
 
   if [ ! -d "steps/$TF_VAR_prefix" ]
@@ -90,10 +99,12 @@ fi
 #Prepare and check the environment for terraform (common for plan and apply)
 if [ "$COMMAND" == "plan" -o "$COMMAND" == "plan-destroy" -o "$COMMAND" == "apply" -o "$COMMAND" == "apply-destroy" ]
 then
+  #Authenticate git repos if any.
   if [ -f /usr/bin/gitlogin.sh ]
   then
     /usr/bin/gitlogin.sh
   fi
+  /usr/bin/ca-certificates.sh
   cat backend.conf
   if [ $? -ne 0 ]
   then
@@ -110,6 +121,7 @@ then
 #Prepare and check the environment for Kubernetes (common for plan and apply)
 elif [ "$COMMAND" == "argocd-plan" -o "$COMMAND" == "argocd-apply" -o "$COMMAND" == "argocd-plan-destroy" -o "$COMMAND" == "argocd-apply-destroy" ]
 then
+  /usr/bin/ca-certificates.sh
   echo "COMMAND $COMMAND, cluster $KUBERNETES_CLUSTER_NAME region $AWS_REGION"
   if [ ! -z "$GOOGLE_REGION" ]
   then
@@ -120,6 +132,17 @@ then
     aws eks update-kubeconfig --name $KUBERNETES_CLUSTER_NAME --region $AWS_REGION
     export PROVIDER="aws"
     export ARGOCD_HOSTNAME=$(kubectl get ingress -n ${ARGOCD_NAMESPACE} -l app.kubernetes.io/component=server -o jsonpath='{.items[*].spec.rules[*].host}')
+  fi
+  export ARGOCD_AUTH_TOKEN=$(kubectl -n ${ARGOCD_NAMESPACE} get secret argocd-infralib-token -o jsonpath="{.data.token}" | base64 -d)
+  export USE_ARGOCD_CLI="false"
+  if [ "$ARGOCD_AUTH_TOKEN" != "" -a "$ARGOCD_HOSTNAME" != "" ]
+  then
+    TES_CONNECTION=$(argocd --server ${ARGOCD_HOSTNAME} --grpc-web app list)
+    if [ $? -eq 0 ]
+    then
+      echo "Connected to ArgoCD successfully."
+      export USE_ARGOCD_CLI="true"
+    fi
   fi
 fi
 
@@ -145,13 +168,16 @@ then
 
 elif [ "$COMMAND" == "apply" ]
 then
-#  echo "Syncing .terraform back to bucket"
-#  if [ ! -z "$GOOGLE_REGION" ]
-#  then
-#    gsutil -m -q rsync -d -r .terraform gs://${INFRALIB_BUCKET}/steps/$TF_VAR_prefix/.terraform
-#  else
-#    aws s3 sync .terraform s3://${INFRALIB_BUCKET}/steps/$TF_VAR_prefix/.terraform --no-progress --quiet --delete
-#  fi
+  if [ "$TERRAFORM_CACHE" == "true" ]
+  then
+    echo "Syncing .terraform back to bucket"
+    if [ ! -z "$GOOGLE_REGION" ]
+    then
+      gsutil -m -q rsync -d -r .terraform gs://${INFRALIB_BUCKET}/steps/$TF_VAR_prefix/.terraform
+    else
+      aws s3 sync .terraform s3://${INFRALIB_BUCKET}/steps/$TF_VAR_prefix/.terraform --no-progress --quiet --delete
+    fi
+  fi
   terraform apply -no-color -input=false /tmp/plans/$TF_VAR_prefix/${TF_VAR_prefix}.tf-plan
   if [ $? -ne 0 ]
   then
@@ -189,10 +215,15 @@ then
   fi
 elif [ "$COMMAND" == "argocd-plan" ]
 then
-
+  HELM_BOOTSTAP="false"
   #When we first run then argocd is not yet installed and we can not use Application objects without installing it.
   if [ "$ARGOCD_HOSTNAME" == "" ]
   then
+    #Authenticate git repos if any.
+    if [ -f /usr/bin/gitlogin.sh ]
+    then
+      /usr/bin/gitlogin.sh
+    fi
     echo "Detecting ArgoCD modules."
     for app_file in ./*.yaml
     do
@@ -206,8 +237,32 @@ then
         repo=`yq -r '.spec.sources[0].repoURL' $app_file`
         path=`yq -r '.spec.sources[0].path' $app_file`
         git clone --depth 1 --single-branch --branch $version $repo git-$app
-        helm upgrade --create-namespace --install -n $namespace -f git-$app/$path/values.yaml -f git-$app/$path/values-${PROVIDER}.yaml -f values-$app.yaml --set argocd-apps.enabled=false $app git-$app/$path
+        #Create bootstrap value file that is only used first time ArgoCD is created.
+        if compgen -A variable | grep -q "^GIT_AUTH_SOURCE_"
+        then
+          echo "
+argocd:
+  configs:
+    repositories:" > git-$app/$path/extra_repos.yaml
+
+          for var in "${!GIT_AUTH_SOURCE_@}"; do
+            NAME=$(echo $var | sed 's/GIT_AUTH_SOURCE_//g')
+            SOURCE="$(echo ${!var})"
+            PASSWORD="$(echo $var | sed 's/GIT_AUTH_SOURCE/GIT_AUTH_PASSWORD/g')"
+            USERNAME="$(echo $var | sed 's/GIT_AUTH_SOURCE/GIT_AUTH_USERNAME/g')"
+            echo "      ${NAME}:
+        url: ${SOURCE}.git
+        name: ${NAME}
+        password: ${!PASSWORD}
+        username: ${!USERNAME}" >> git-$app/$path/extra_repos.yaml
+          done
+        else
+            touch git-$app/$path/extra_repos.yaml
+        fi
+        
+        helm upgrade --create-namespace --install -n $namespace -f git-$app/$path/values.yaml -f git-$app/$path/values-${PROVIDER}.yaml -f values-$app.yaml -f git-$app/$path/extra_repos.yaml --set argocd.configs.cm.admin.enabled="true" --set argocd-apps.enabled=false $app git-$app/$path
         rm -rf values-$app.yaml git-$app
+        HELM_BOOTSTAP="true"
       fi
     done
     if [ "$PROVIDER" == "google" ]
@@ -223,27 +278,7 @@ then
     echo "Unable to get ArgoCD hostname. Check ArgoCD installation."
     exit 25
   fi
-  export ARGOCD_AUTH_TOKEN=`kubectl -n ${ARGOCD_NAMESPACE} get secret argocd-infralib-token -o jsonpath="{.data.token}" | base64 -d`
   
-  if [ "$ARGOCD_AUTH_TOKEN" == "" ]
-  then
-    echo "No infralib ArgoCD token found, probably it is first run. Trying to create token using admin credentials."
-    ARGO_PASS=`kubectl -n ${ARGOCD_NAMESPACE} get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d` 
-    if [ "$ARGO_PASS" != "" ]
-    then
-      argocd login --password ${ARGO_PASS} --username admin ${ARGOCD_HOSTNAME} --grpc-web
-      export ARGOCD_AUTH_TOKEN=`argocd account generate-token --account infralib`
-      argocd logout ${ARGOCD_HOSTNAME}
-      if [ "$ARGOCD_AUTH_TOKEN" != "" ]
-      then
-        kubectl create secret -n ${ARGOCD_NAMESPACE} generic argocd-infralib-token --from-literal=token=$ARGOCD_AUTH_TOKEN
-      else
-        echo "Failed to create ARGOCD_AUTH_TOKEN. This is normal initially when the ArgoCD ingress hostname is not resolving yet."
-      fi
-    else
-      echo "Unable to get argocd Admin token to create the account token for infralib."
-    fi
-  fi
   rm -f *.sync *.log
   PIDS=""
   for app_file in ./*.yaml
@@ -276,15 +311,17 @@ then
       cat $name.log
   done
   
-  if [ "$ARGOCD_AUTH_TOKEN" != "" ]
+  ADD=`cat ./*.log | grep "^Status " | grep -ve"Status: Synced" | grep -ve "Missing:0" | wc -l`
+  CHANGE=`cat ./*.log | grep "^Status " | grep -ve"Status: Synced" | grep -ve "Changed:0" | wc -l`
+  DESTROY=`cat ./*.log | grep "^Status " | grep -ve"Status: Synced" | grep -ve "RequiredPruning:0" | wc -l`
+  
+  #Prevent agent from confirming first bootstrap when ArgoCD's own application will always show changes since it is already bootstrapped with Helm.
+  if [ $HELM_BOOTSTAP == "true"  -a $CHANGE -gt 0 ]
   then
-    CHANGED=`cat ./*.log | grep "^Status " | grep -ve"Status: Synced" | grep "RequiredPruning: 0$" | wc -l`
-    DESTROY=`cat ./*.log | grep "^Status " | grep -ve"Status: Synced" | grep -ve "RequiredPruning: 0$" | wc -l`
-  else
-    CHANGED=`cat ./*.log | grep '^application\.argoproj\.io/.*' | wc -l`
-    DESTROY="0"
+    CHANGE=$((CHANGE - 1))
   fi
-  echo "ArgoCD Applications: ${CHANGED} has changed objects, ${DESTROY} has RequiredPruning objects."
+
+  echo "ArgoCD Applications: ${ADD} to add, ${CHANGE} to change, ${DESTROY} to destroy."
 
   rm -f *.log
   
@@ -304,11 +341,6 @@ then
   then
     echo "Unable to get ArgoCD hostname."
     exit 25
-  fi
-  export ARGOCD_AUTH_TOKEN=`kubectl -n ${ARGOCD_NAMESPACE} get secret argocd-infralib-token -o jsonpath="{.data.token}" | base64 -d`
-  if [ "$ARGOCD_AUTH_TOKEN" == "" ]
-  then
-    echo "Did not get the infralib account token, falling back to kubectl sync and check."
   fi
   
   PIDS=""

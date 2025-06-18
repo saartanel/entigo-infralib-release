@@ -101,14 +101,12 @@ variable "security_group_ingress" {
     protocol = string
     cidr_blocks = list(string)
   }))
-  default = {
-    ssh = {
-      from_port = 22
-      to_port = 22
-      protocol = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
+  default = {}
+}
+
+variable "extra_security_group_ids" {
+  type = list(string)
+  default = []
 }
 
 variable "kms_key_id" {

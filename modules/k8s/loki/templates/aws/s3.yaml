@@ -8,6 +8,10 @@ metadata:
     crossplane.io/external-name: {{ .Values.global.bucketName }}
 spec:
   forProvider:
+    tagging:
+      tagSet:
+        - key: created-by
+          value: entigo-infralib
     acl: private
     locationConstraint: {{ .Values.global.aws.region }}
     objectOwnership: BucketOwnerPreferred
@@ -30,6 +34,12 @@ spec:
           sseAlgorithm: AES256
           {{- end }}
         bucketKeyEnabled: true
+    lifecycleConfiguration:
+      {{- if .Values.global.aws.bucketLifecycleRules }}
+      rules:
+        {{- toYaml .Values.global.aws.bucketLifecycleRules | nindent 8 }}
+        {{- else }}
+      {{- end }}
   providerConfigRef:
     name: {{ .Values.global.providerConfigRefName }}
 

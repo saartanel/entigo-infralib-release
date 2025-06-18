@@ -67,7 +67,18 @@ grafana:
         gnetId: 19105
         revision: 5
         datasource: Prometheus
-
+      limitsrequests:
+        gnetId: 22849
+        revision: 3
+        datasource: Prometheus
+      pvc:
+        gnetId: 13646
+        revision: 2
+        datasource: Prometheus
+      trivy-operator-vulnerabilities:
+        gnetId: 16337
+        revision: 14
+        datasource: Prometheus
   deploymentStrategy:
     type: Recreate
 
@@ -80,21 +91,21 @@ grafana:
       limits:
         cpu: 1000m
         memory: 512Mi
-        ephemeral-storage: 10Gi
+        ephemeral-storage: 1Gi
       requests:
         cpu: 10m
         memory: 64Mi
-        ephemeral-storage: 1Gi
+        ephemeral-storage: 100Mi
 
   resources:
     limits:
       cpu: 1000m
       memory: 512Mi
-      ephemeral-storage: 10Gi
+      ephemeral-storage: 1Gi
     requests:
       cpu: 10m
       memory: 64Mi
-      ephemeral-storage: 1Gi
+      ephemeral-storage: 100Mi
   networkPolicy:
     enabled: false
     ingress: true
@@ -130,11 +141,11 @@ grafana:
       limits:
         cpu: 1000m
         memory: 512Mi
-        ephemeral-storage: 10Gi
+        ephemeral-storage: 1Gi
       requests:
         cpu: 10m
         memory: 32Mi
-        ephemeral-storage: 1Gi
+        ephemeral-storage: 100Mi
     alerts:
       enabled: true
     dashboards:
@@ -147,11 +158,11 @@ grafana:
       limits:
         cpu: 1000m
         memory: 512Mi
-        ephemeral-storage: 10Gi
+        ephemeral-storage: 100Mi
       requests:
         cpu: 10m
         memory: 32Mi
-        ephemeral-storage: 1Gi
+        ephemeral-storage: 10Mi
 
   affinity:
     nodeAffinity:

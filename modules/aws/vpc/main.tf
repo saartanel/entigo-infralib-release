@@ -25,7 +25,7 @@ locals {
 #https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "5.19.0"
+  version = "5.21.0"
 
   name = var.prefix
   cidr = var.vpc_cidr
@@ -47,6 +47,9 @@ module "vpc" {
 
   create_database_subnet_group    = length(local.database_subnets) > 0 ? true : false
   create_elasticache_subnet_group = length(local.elasticache_subnets) > 0 ? true : false
+  create_multiple_intra_route_tables = var.create_multiple_intra_route_tables
+  create_multiple_public_route_tables = var.create_multiple_public_route_tables
+  
 
   enable_nat_gateway     = var.enable_nat_gateway
   single_nat_gateway     = var.one_nat_gateway_per_az ? false : true
@@ -79,6 +82,7 @@ module "vpc" {
   tags = {
     Terraform = "true"
     Prefix    = var.prefix
+    created-by = "entigo-infralib"
   }
 }
 
@@ -87,7 +91,9 @@ resource "aws_security_group" "pipeline_security_group" {
   description = "${var.prefix} Security group used by pipelines that run terraform"
   vpc_id      = module.vpc.vpc_id
   tags = {
-    Name = "Allow pipeline access to ${var.prefix}"
+    Terraform  = "true"
+    Prefix     = var.prefix
+    created-by = "entigo-infralib"
   }
 }
 

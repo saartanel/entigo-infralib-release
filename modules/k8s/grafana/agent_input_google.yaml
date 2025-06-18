@@ -4,7 +4,7 @@ global:
     hostname: "{{ .module.name }}.{{ .toutput.dns.int_domain }}"
   datasources:
     loki:
-      hostname: "http://loki-gateway.{{ .tmodule.loki }}"
+      hostname: "http://{{ .tmodule.loki }}-gateway.{{ .tmodule.loki }}"
     prometheus:
       hostname: "http://{{ .tmodule.prometheus }}-server.{{ .tmodule.prometheus }}"
 grafana:
@@ -13,3 +13,17 @@ grafana:
       root_url: https://{{ .module.name }}.{{ .toutput.dns.int_domain }}
   serviceAccount:
     name: "{{ .module.name }}"
+  image:
+    registry: '{{ .toptout.gar-proxy.hub_registry | "docker.io" }}'
+  sidecar:
+    image:
+      registry: '{{ .toptout.gar-proxy.quay_registry | "quay.io" }}'
+  initChownData:
+    image:
+      registry: '{{ .toptout.gar-proxy.hub_registry | "docker.io" }}'
+  downloadDashboardsImage:
+    image:
+      registry: '{{ .toptout.gar-proxy.hub_registry | "docker.io" }}'
+  imageRenderer:
+    image:
+      registry: '{{ .toptout.gar-proxy.hub_registry | "docker.io" }}'

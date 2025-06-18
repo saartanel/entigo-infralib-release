@@ -5,6 +5,10 @@ global:
 argocd-apps:
   enabled: true
 
+job:
+  image: docker.io/entigolabs/entigo-infralib-base
+  tag: "v1.5.33"
+
 argocd:
   crds:
     install: true
@@ -52,11 +56,11 @@ argocd:
       limits:
         cpu: 1000m
         memory: 512Mi
-        ephemeral-storage: 10Gi
-      requests:
-        cpu: 50m
-        memory: 128Mi
         ephemeral-storage: 1Gi
+      requests:
+        cpu: 40m
+        memory: 96Mi
+        ephemeral-storage: 100Mi
     autoscaling:
       enabled: true
       minReplicas: 1
@@ -88,7 +92,7 @@ argocd:
         ephemeral-storage: 20Gi
       requests:
         cpu: 10m
-        memory: 32Mi
+        memory: 48Mi
         ephemeral-storage: 2Gi
 
   redis:
@@ -114,14 +118,18 @@ argocd:
       limits:
         cpu: 1000m
         memory: 128Mi
-        ephemeral-storage: 10Gi
-      requests:
-        cpu: 70m
-        memory: 128Mi
         ephemeral-storage: 1Gi
+      requests:
+        cpu: 30m
+        memory: 32Mi
+        ephemeral-storage: 100Mi
   redisSecretInit:
     jobAnnotations:
       kube-score/ignore: pod-networkpolicy
+      argocd.argoproj.io/hook: Sync
+      argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    podAnnotations:
+      sidecar.istio.io/inject: "false"
     affinity:
       nodeAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -169,11 +177,11 @@ argocd:
         limits:
           cpu: 1000m
           memory: 128Mi
-          ephemeral-storage: 10Gi
+          ephemeral-storage: 1Gi
         requests:
           cpu: 70m
           memory: 128Mi
-          ephemeral-storage: 1Gi
+          ephemeral-storage: 100Mi
     sentinel:
       affinity:
         nodeAffinity:
@@ -194,11 +202,11 @@ argocd:
         limits:
           cpu: 1000m
           memory: 128Mi
-          ephemeral-storage: 10Gi
+          ephemeral-storage: 1Gi
         requests:
           cpu: 70m
           memory: 128Mi
-          ephemeral-storage: 1Gi
+          ephemeral-storage: 100Mi
     haproxy:
       affinity: |
         nodeAffinity:
@@ -219,11 +227,11 @@ argocd:
         limits:
           cpu: 1000m
           memory: 128Mi
-          ephemeral-storage: 10Gi
+          ephemeral-storage: 1Gi
         requests:
           cpu: 70m
           memory: 128Mi
-          ephemeral-storage: 1Gi
+          ephemeral-storage: 100Mi
 
   repoServer:
     autoscaling:
@@ -252,11 +260,11 @@ argocd:
       limits:
         cpu: 1000m
         memory: 512Mi
-        ephemeral-storage: 10Gi
-      requests:
-        cpu: 70m
-        memory: 128Mi
         ephemeral-storage: 1Gi
+      requests:
+        cpu: 50m
+        memory: 96Mi
+        ephemeral-storage: 100Mi
 
   applicationSet:
     replicaCount: 2
@@ -281,11 +289,11 @@ argocd:
       limits:
         cpu: 1000m
         memory: 512Mi
-        ephemeral-storage: 10Gi
-      requests:
-        cpu: 70m
-        memory: 128Mi
         ephemeral-storage: 1Gi
+      requests:
+        cpu: 10m
+        memory: 32Mi
+        ephemeral-storage: 100Mi
 
   notifications:
     deploymentAnnotations:
@@ -309,16 +317,16 @@ argocd:
       limits:
         cpu: 1000m
         memory: 128Mi
-        ephemeral-storage: 10Gi
-      requests:
-        cpu: 70m
-        memory: 64Mi
         ephemeral-storage: 1Gi
+      requests:
+        cpu: 10m
+        memory: 32Mi
+        ephemeral-storage: 100Mi
 
   controller:
     env: 
     - name: ARGOCD_K8S_CLIENT_QPS
-      value: "300"
+      value: "150"
     affinity:
       nodeAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -338,8 +346,8 @@ argocd:
       limits:
         cpu: 3000m
         memory: 4096Mi
-        ephemeral-storage: 10Gi
+        ephemeral-storage: 1Gi
       requests:
         cpu: 70m
         memory: 768Mi
-        ephemeral-storage: 1Gi
+        ephemeral-storage: 100Mi

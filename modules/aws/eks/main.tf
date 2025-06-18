@@ -20,13 +20,13 @@ locals {
       key_name         = var.node_ssh_key_pair_name
       release_version = var.eks_cluster_version
       ami_type        = var.eks_main_ami_type
-      iam_role_additional_policies = local.iam_role_additional_policies
       labels = {
         main = "true"
       }
       launch_template_tags = {
         Terraform = "true"
         Prefix    = var.prefix
+        created-by = "entigo-infralib"
       }
       block_device_mappings = {
         xvda = {
@@ -52,7 +52,6 @@ locals {
       key_name         = var.node_ssh_key_pair_name
       release_version = var.eks_cluster_version
       ami_type        = var.eks_mon_ami_type
-      iam_role_additional_policies = local.iam_role_additional_policies
       taints = [
         {
           key    = "mon"
@@ -66,6 +65,7 @@ locals {
       launch_template_tags = {
         Terraform = "true"
         Prefix    = var.prefix
+        created-by = "entigo-infralib"
       }
 
       block_device_mappings = {
@@ -92,7 +92,6 @@ locals {
       key_name         = var.node_ssh_key_pair_name
       release_version = var.eks_cluster_version
       ami_type        = var.eks_tools_ami_type
-      iam_role_additional_policies = local.iam_role_additional_policies
       taints = [
         {
           key    = "tools"
@@ -106,6 +105,7 @@ locals {
       launch_template_tags = {
         Terraform = "true"
         Prefix    = var.prefix
+        created-by = "entigo-infralib"
       }
 
       block_device_mappings = {
@@ -198,7 +198,7 @@ resource "aws_ec2_tag" "publicsubnets" {
 
 module "ebs_csi_irsa_role" {
   source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version               = "5.52.2"
+  version               = "5.58.0"
   role_name             = "${var.prefix}-ebs-csi"
   attach_ebs_csi_policy = true
   ebs_csi_kms_cmk_ids = var.node_encryption_kms_key_arn != "" ? [var.node_encryption_kms_key_arn] : []
@@ -211,12 +211,13 @@ module "ebs_csi_irsa_role" {
   tags = {
     Terraform = "true"
     Prefix    = var.prefix
+    created-by = "entigo-infralib"
   }
 }
 
 module "vpc_cni_irsa_role" {
   source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version               = "5.52.2"
+  version               = "5.58.0"
   role_name_prefix      = "VPC-CNI-IRSA"
   attach_vpc_cni_policy = true
   vpc_cni_enable_ipv4   = true
@@ -231,13 +232,14 @@ module "vpc_cni_irsa_role" {
   tags = {
     Terraform = "true"
     Prefix    = var.prefix
+    created-by = "entigo-infralib"
   }
 }
 
 #https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.33.1"
+  version = "20.36.0"
 
   cluster_name                    = var.prefix
   cluster_version                 = var.eks_cluster_version
@@ -446,9 +448,8 @@ module "eks" {
   }
 
   eks_managed_node_group_defaults = {
-    iam_role_additional_policies = {
-      AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-    }
+    iam_role_additional_policies = merge({ AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" },
+                                          local.iam_role_additional_policies)
     iam_role_attach_cni_policy = false
   }
 
@@ -493,6 +494,7 @@ module "eks" {
   tags = {
     Terraform = "true"
     Prefix    = var.prefix
+    created-by = "entigo-infralib"
   }
 }
 

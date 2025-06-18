@@ -48,12 +48,12 @@ variable "enable_l4_ilb_subsetting" {
 
 variable "kubernetes_version" {
   type    = string
-  default = "1.30."
+  default = "1.31."
 }
 
 variable "grant_registry_access" {
   type    = bool
-  default = false
+  default = true
 }
 
 variable "registry_project_ids" {
